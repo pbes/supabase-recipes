@@ -8,11 +8,10 @@ const ordering = ref<OrderType>("created_at");
 const recipeStore = useRecipeStore();
 
 onMounted(() => {
-  // TODO if we have recipes in the store, don't fetch them again
-  // if (!recipeStore.loaded) {
-  //   refresh();
-  // }
-  refresh();
+  // TODO we can remove this condition and force refresh on every mount
+  if (!recipeStore.loaded) {
+    refresh();
+  }
 });
 
 watch(ordering, () => {

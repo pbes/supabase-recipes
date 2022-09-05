@@ -22,22 +22,13 @@ const handleSubmit = async (e: Event) => {
     formError.value = "Please fill in all the fields correctly";
     return;
   }
-
-  const { data, error } = await supabase.from("recipes").insert({
-    title: formValue.title,
-    method: formValue.method,
-    rating: formValue.rating,
-  });
-
-  if (error) {
-    formError.value = "Supabase error: " + error.message;
-    return;
-  }
-
-  if (data) {
-    recipeStore.add(data[0]);
+  
+  await recipeStore.add(formValue);
+  if (!recipeStore.actionError) {
     formError.value = "";
     router.push("/");
+  } else {
+    formError.value = recipeStore.actionError;
   }
 };
 </script>

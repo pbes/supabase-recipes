@@ -47,24 +47,12 @@ const handleSubmit = async (e: Event) => {
     return;
   }
 
-  const { data, error } = await supabase
-    .from("recipes")
-    .update({
-      title: formValue.title,
-      method: formValue.method,
-      rating: formValue.rating,
-    })
-    .eq("id", formValue.id);
-
-  if (error) {
-    formError.value = "Supabase error: " + error.message;
-    return;
-  }
-
-  if (data) {
-    recipeStore.update(data[0]);
+  await recipeStore.update(formValue);
+  if (!recipeStore.actionError) {
     formError.value = "";
     router.push("/");
+  } else {
+    formError.value = recipeStore.actionError;
   }
 };
 </script>
