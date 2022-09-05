@@ -1,48 +1,34 @@
 <script setup lang="ts">
 import { ref, onMounted, watch } from "vue";
-import type { Ref } from "vue";
-import supabase from "@/api/supabase";
-import type { OrderType, Recipe } from "@/api/types";
+import type { OrderType } from "@/api/types";
 import RecipeCard from "../components/RecipeCard.vue";
+import { useRecipeStore } from "@/stores/recipe";
 
-const recipes: Ref<Recipe[]> = ref<Recipe[]>([]);
-const fetchError = ref("");
 const ordering = ref<OrderType>("created_at");
+const recipeStore = useRecipeStore();
 
 onMounted(() => {
-  refresh(ordering.value);
+  // TODO if we have recipes in the store, don't fetch them again
+  // if (!recipeStore.loaded) {
+  //   refresh();
+  // }
+  refresh();
 });
 
 watch(ordering, () => {
-  refresh(ordering.value);
+  refresh();
 });
-
-const refresh = async (order: OrderType) => {
-  fetchError.value = "";
-  const ascending = order === "created_at" || order === "title";
-
-  const { data, error } = await supabase
-    .from("recipes")
-    .select("*")
-    .order(order, { ascending: ascending });
-
-  if (error) {
-    fetchError.value = "Supabase error: " + error.message;
-    return;
-  }
-
-  if (data) {
-    recipes.value = data;
-  }
-};
 
 const setOrderBy = (type: OrderType) => {
   ordering.value = type;
 };
 
 const handleDelete = async (id: number) => {
-  await supabase.from("recipes").delete().eq("id", id);
-  refresh(ordering.value);
+  recipeStore.delete(id);
+};
+
+const refresh = () => {
+  recipeStore.fetch(ordering.value);
 };
 
 // Prerequisites: supabase, .env values are set, recipes table is created
@@ -51,7 +37,7 @@ const handleDelete = async (id: number) => {
 <template>
   <main>
     <div class="page home">
-      <p class="error" v-if="fetchError">{{ fetchError }}</p>
+      <p class="error" v-if="recipeStore.fetchError">{{ recipeStore.fetchError }}</p>
       <div class="recipes">
         <div class="order-by">
           <p>Order by:</p>
@@ -59,10 +45,10 @@ const handleDelete = async (id: number) => {
           <button @click="setOrderBy('title')">Title</button>
           <button @click="setOrderBy('rating')">Rating</button>
         </div>
-        <template v-if="recipes">
+        <template v-if="recipeStore.recipes">
           <div class="recipe-grid">
             <RecipeCard
-              v-for="recipe in recipes"
+              v-for="recipe in recipeStore.recipes"
               :key="recipe.id"
               :recipe="recipe"
               @delete="handleDelete"

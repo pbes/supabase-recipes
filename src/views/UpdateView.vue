@@ -3,12 +3,14 @@ import { onMounted, reactive, ref } from "vue";
 import { useRouter } from "vue-router";
 import type { Recipe } from "@/api/types";
 import supabase from "@/api/supabase";
+import { useRecipeStore } from "@/stores/recipe";
 
 const router = useRouter();
 const formError = ref("");
 const loading = ref(true);
 
 const id = ref(router.currentRoute.value.params.id);
+const recipeStore = useRecipeStore();
 
 const formValue: Recipe = reactive<Recipe>({
   id: 0,
@@ -18,20 +20,21 @@ const formValue: Recipe = reactive<Recipe>({
 });
 
 onMounted(async () => {
-  const { data, error } = await supabase
-    .from("recipes")
-    .select("*")
-    .eq("id", id.value);
+  let data: Recipe | undefined;
+  if (recipeStore.loaded) {
+    data = recipeStore.recipes.find((r) => r.id === Number(id.value));
+  }
 
-  if (error) {
+  if (!data) {
+    recipeStore.fetch('created_at');
     router.push("/");
   }
 
   if (data) {
-    formValue.id = data[0].id;
-    formValue.title = data[0].title;
-    formValue.method = data[0].method;
-    formValue.rating = data[0].rating;
+    formValue.id = data.id;
+    formValue.title = data.title;
+    formValue.method = data.method;
+    formValue.rating = data.rating;
   }
   loading.value = false;
 });
@@ -59,6 +62,7 @@ const handleSubmit = async (e: Event) => {
   }
 
   if (data) {
+    recipeStore.update(data[0]);
     formError.value = "";
     router.push("/");
   }

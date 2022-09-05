@@ -3,8 +3,10 @@ import { reactive, ref } from "vue";
 import { useRouter } from "vue-router";
 import supabase from "@/api/supabase";
 import type { CreateRecipeDTO } from "@/api/types";
+import { useRecipeStore } from "@/stores/recipe";
 
 const router = useRouter();
+const recipeStore = useRecipeStore();
 
 const formError = ref("");
 const formValue: CreateRecipeDTO = reactive<CreateRecipeDTO>({
@@ -33,6 +35,7 @@ const handleSubmit = async (e: Event) => {
   }
 
   if (data) {
+    recipeStore.add(data[0]);
     formError.value = "";
     router.push("/");
   }
